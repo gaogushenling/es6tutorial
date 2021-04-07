@@ -281,7 +281,7 @@ let union = new Set([...a, ...b]);
 let intersect = new Set([...a].filter(x => b.has(x)));
 // set {2, 3}
 
-// 差集
+// （a 相对于 b 的）差集
 let difference = new Set([...a].filter(x => !b.has(x)));
 // Set {1}
 ```
@@ -354,7 +354,7 @@ const ws = new WeakSet(b);
 // Uncaught TypeError: Invalid value used in weak set(…)
 ```
 
-上面代码中，数组`b`的成员不是对象，加入 WeaKSet 就会报错。
+上面代码中，数组`b`的成员不是对象，加入 WeakSet 就会报错。
 
 WeakSet 结构有以下三个方法。
 
@@ -833,6 +833,15 @@ strMapToObj(myMap)
 
 **（4）对象转为 Map**
 
+对象转为 Map 可以通过`Object.entries()`。
+
+```javascript
+let obj = {"a":1, "b":2};
+let map = new Map(Object.entries(obj));
+```
+
+此外，也可以自己实现一个转换函数。
+
 ```javascript
 function objToStrMap(obj) {
   let strMap = new Map();
@@ -1078,23 +1087,27 @@ undefined
 
 上面代码中，只要外部的引用消失，WeakMap 内部的引用，就会自动被垃圾回收清除。由此可见，有了 WeakMap 的帮助，解决内存泄漏就会简单很多。
 
+Chrome 浏览器的 Dev Tools 的 Memory 面板，有一个垃圾桶的按钮，可以强制垃圾回收（garbage collect）。这个按钮也能用来观察 WeakMap 里面的引用是否消失。
+
 ### WeakMap 的用途
 
 前文说过，WeakMap 应用的典型场合就是 DOM 节点作为键名。下面是一个例子。
 
 ```javascript
-let myElement = document.getElementById('logo');
 let myWeakmap = new WeakMap();
 
-myWeakmap.set(myElement, {timesClicked: 0});
+myWeakmap.set(
+  document.getElementById('logo'),
+  {timesClicked: 0})
+;
 
-myElement.addEventListener('click', function() {
-  let logoData = myWeakmap.get(myElement);
+document.getElementById('logo').addEventListener('click', function() {
+  let logoData = myWeakmap.get(document.getElementById('logo'));
   logoData.timesClicked++;
 }, false);
 ```
 
-上面代码中，`myElement`是一个 DOM 节点，每当发生`click`事件，就更新一下状态。我们将这个状态作为键值放在 WeakMap 里，对应的键名就是`myElement`。一旦这个 DOM 节点删除，该状态就会自动消失，不存在内存泄漏风险。
+上面代码中，`document.getElementById('logo')`是一个 DOM 节点，每当发生`click`事件，就更新一下状态。我们将这个状态作为键值放在 WeakMap 里，对应的键名就是这个节点对象。一旦这个 DOM 节点删除，该状态就会自动消失，不存在内存泄漏风险。
 
 WeakMap 的另一个用处是部署私有属性。
 
@@ -1126,3 +1139,4 @@ c.dec()
 ```
 
 上面代码中，`Countdown`类的两个内部属性`_counter`和`_action`，是实例的弱引用，所以如果删除实例，它们也就随之消失，不会造成内存泄漏。
+
